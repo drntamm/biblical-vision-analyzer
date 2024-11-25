@@ -138,12 +138,33 @@ Prayer Points:
 
 @app.route('/symbols')
 def get_symbols():
+    """Return biblical symbols organized by category"""
+    from biblical_symbols import BIBLICAL_SYMBOLS
+    
+    # Organize symbols by category
+    symbols_by_category = {}
+    for symbol in BIBLICAL_SYMBOLS:
+        category = symbol['category']
+        if category not in symbols_by_category:
+            symbols_by_category[category] = []
+        symbols_by_category[category].append(symbol)
+    
+    return jsonify(symbols_by_category)
+
+@app.route('/symbols_by_category')
+def get_symbols_by_category():
     symbols = BiblicalSymbol.query.all()
-    return jsonify([{
-        'symbol': s.symbol,
-        'meaning': s.meaning,
-        'references': s.scripture_references
-    } for s in symbols])
+    symbols_by_category = {}
+    for symbol in symbols:
+        category = symbol.category
+        if category not in symbols_by_category:
+            symbols_by_category[category] = []
+        symbols_by_category[category].append({
+            'symbol': symbol.symbol,
+            'meaning': symbol.meaning,
+            'references': symbol.scripture_references
+        })
+    return jsonify(symbols_by_category)
 
 @app.route('/init_database', methods=['GET'])
 def initialize_database():

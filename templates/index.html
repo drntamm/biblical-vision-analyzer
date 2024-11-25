@@ -205,6 +205,79 @@
             display: none;
         }
 
+        .symbols-reference {
+            margin-top: 3rem;
+            padding: 2rem;
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .category-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .category-btn {
+            padding: 0.5rem 1rem;
+            background: var(--secondary-color);
+            border: none;
+            border-radius: 2rem;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--primary-color);
+            transition: all 0.3s ease;
+        }
+
+        .category-btn:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .category-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .symbols-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .symbol-card {
+            padding: 1.5rem;
+            background: var(--secondary-color);
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .symbol-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .symbol-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .symbol-meaning {
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .symbol-references {
+            font-family: 'Lora', serif;
+            font-style: italic;
+            color: var(--light-text);
+            font-size: 0.9rem;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 1rem;
@@ -266,6 +339,18 @@
             <div class="interpretation-section">
                 <h3 class="section-title">Prayer Guide</h3>
                 <div id="prayer-points"></div>
+            </div>
+        </div>
+
+        <div class="symbols-reference">
+            <h2 class="section-title">Biblical Symbols Reference</h2>
+            <div class="symbols-categories">
+                <div class="category-buttons">
+                    <!-- Category buttons will be dynamically added here -->
+                </div>
+                <div class="symbols-content">
+                    <!-- Symbol details will be shown here -->
+                </div>
             </div>
         </div>
     </div>
@@ -340,6 +425,59 @@
                 console.error('Error:', error);
             });
         }
+
+        function loadSymbols() {
+            fetch('/symbols')
+                .then(response => response.json())
+                .then(data => {
+                    const categoryButtons = document.querySelector('.category-buttons');
+                    const symbolsContent = document.querySelector('.symbols-content');
+                    
+                    // Create category buttons
+                    Object.keys(data).forEach(category => {
+                        const button = document.createElement('button');
+                        button.className = 'category-btn';
+                        button.textContent = category;
+                        button.onclick = () => showSymbols(category, data[category]);
+                        categoryButtons.appendChild(button);
+                    });
+                    
+                    // Show first category by default
+                    const firstCategory = Object.keys(data)[0];
+                    const firstButton = categoryButtons.firstChild;
+                    firstButton.classList.add('active');
+                    showSymbols(firstCategory, data[firstCategory]);
+                })
+                .catch(error => console.error('Error loading symbols:', error));
+        }
+
+        function showSymbols(category, symbols) {
+            // Update active button
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent === category) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Show symbols
+            const symbolsContent = document.querySelector('.symbols-content');
+            symbolsContent.innerHTML = '';
+            
+            symbols.forEach(symbol => {
+                const card = document.createElement('div');
+                card.className = 'symbol-card';
+                card.innerHTML = `
+                    <div class="symbol-name">${symbol.symbol}</div>
+                    <div class="symbol-meaning">${symbol.meaning}</div>
+                    <div class="symbol-references">${symbol.scripture_references}</div>
+                `;
+                symbolsContent.appendChild(card);
+            });
+        }
+
+        // Load symbols when page loads
+        document.addEventListener('DOMContentLoaded', loadSymbols);
     </script>
 </body>
 </html>
