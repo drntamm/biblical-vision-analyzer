@@ -364,8 +364,24 @@
             const errorMessage = document.querySelector('.error-message');
 
             if (!vision) {
-                errorMessage.textContent = 'Please describe your vision before analyzing.';
+                errorMessage.textContent = 'Please provide a detailed description of your vision. Include what you saw, felt, or experienced, even if it seems unclear.';
                 errorMessage.style.display = 'block';
+                errorMessage.style.color = 'var(--primary-color)';
+                errorMessage.style.padding = '1rem';
+                errorMessage.style.border = '2px solid var(--primary-color)';
+                errorMessage.style.borderRadius = '0.5rem';
+                errorMessage.style.marginBottom = '1rem';
+                return;
+            }
+
+            if (vision.length < 10) {
+                errorMessage.textContent = 'Please provide more details about your vision. What did you see? What emotions did you feel? What symbols or events occurred?';
+                errorMessage.style.display = 'block';
+                errorMessage.style.color = 'var(--primary-color)';
+                errorMessage.style.padding = '1rem';
+                errorMessage.style.border = '2px solid var(--primary-color)';
+                errorMessage.style.borderRadius = '0.5rem';
+                errorMessage.style.marginBottom = '1rem';
                 return;
             }
 
