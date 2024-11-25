@@ -69,8 +69,11 @@ class BiblicalSymbol(db.Model):
 def home():
     return render_template('index.html')
 
-@app.route('/submit_vision', methods=['POST'])
+@app.route('/submit_vision', methods=['POST', 'OPTIONS'])
 def submit_vision():
+    if request.method == 'OPTIONS':
+        return '', 204
+        
     try:
         data = request.json
         logger.info(f"Received vision submission: {data}")
@@ -82,45 +85,18 @@ def submit_vision():
                 "status": "error"
             }), 400
         
-        # Create new vision entry
-        new_vision = Vision(
-            title=data.get('title', 'Untitled Vision'),
-            description=data['description'],
-            context=data.get('context', '')
-        )
-        
         # Analyze the vision
         try:
             analysis = vision_analyzer.analyze_vision(
-                description=new_vision.description,
-                context=new_vision.context
+                description=data['description'],
+                context=data.get('context', '')
             )
             logger.info("Vision analysis completed successfully")
             
-            # Convert analysis to string format if it's a dict
-            if isinstance(analysis, dict):
-                interpretation_text = f"""
-Pattern Insights:
-{chr(8226)} {chr(10).join(analysis.get('pattern_insights', ['No specific patterns identified']))}
-
-Biblical Commentary:
-Major Themes Identified:
-{chr(8226)} {chr(10).join(analysis.get('themes', ['No specific themes identified']))}
-
-Scripture References for Meditation:
-{chr(8226)} {chr(10).join([f"{ref}: {text}" for ref, text in analysis.get('scripture_references', [('No specific references', 'Please seek guidance')])])}
-
-Application Points:
-{chr(8226)} {chr(10).join(analysis.get('application_points', ['Continue in prayer and meditation']))}
-
-Prayer Points:
-{chr(8226)} {chr(10).join(analysis.get('prayer_points', ['Seek divine guidance']))}
-"""
-            else:
-                interpretation_text = str(analysis)
-            
-            new_vision.interpretation = interpretation_text
-            logger.info("Interpretation text generated successfully")
+            return jsonify({
+                "interpretation": analysis,
+                "status": "success"
+            })
             
         except Exception as e:
             logger.error(f"Error during vision analysis: {str(e)}")
@@ -129,25 +105,6 @@ Prayer Points:
                 "status": "error",
                 "details": str(e)
             }), 500
-        
-        # Save to database
-        try:
-            db.session.add(new_vision)
-            db.session.commit()
-            logger.info("Vision saved to database successfully")
-        except Exception as e:
-            logger.error(f"Database error: {str(e)}")
-            db.session.rollback()
-            return jsonify({
-                "error": "Database error occurred",
-                "status": "error",
-                "details": str(e)
-            }), 500
-        
-        return jsonify({
-            "interpretation": new_vision.interpretation,
-            "status": "success"
-        })
         
     except Exception as e:
         error_msg = f"Error processing vision: {str(e)}"

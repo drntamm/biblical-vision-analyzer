@@ -407,32 +407,51 @@
                 loading.style.display = 'none';
                 interpretation.style.display = 'block';
 
-                // Update pattern insights
-                const patternInsights = document.getElementById('pattern-insights');
-                patternInsights.innerHTML = data.interpretation.pattern_insights.map(insight => 
-                    `<p>• ${insight}</p>`
-                ).join('');
+                try {
+                    // Parse the interpretation string into an object if it's not already
+                    const interpretationData = typeof data.interpretation === 'string' 
+                        ? JSON.parse(data.interpretation) 
+                        : data.interpretation;
 
-                // Update scripture references
-                const scriptureRefs = document.getElementById('scripture-references');
-                scriptureRefs.innerHTML = data.interpretation.scripture_references.map(([ref, text]) => 
-                    `<p>• ${ref}</p><p class="scripture-reference">"${text}"</p>`
-                ).join('');
+                    // Update pattern insights
+                    const patternInsights = document.getElementById('pattern-insights');
+                    if (interpretationData.pattern_insights) {
+                        patternInsights.innerHTML = interpretationData.pattern_insights
+                            .map(insight => `<p>• ${insight}</p>`)
+                            .join('');
+                    }
 
-                // Update application points
-                const applicationPoints = document.getElementById('application-points');
-                applicationPoints.innerHTML = data.interpretation.application_points.map(point => 
-                    `<p>• ${point}</p>`
-                ).join('');
+                    // Update scripture references
+                    const scriptureRefs = document.getElementById('scripture-references');
+                    if (interpretationData.scripture_references) {
+                        scriptureRefs.innerHTML = interpretationData.scripture_references
+                            .map(([ref, text]) => `<p>• ${ref}</p><p class="scripture-reference">"${text}"</p>`)
+                            .join('');
+                    }
 
-                // Update prayer points
-                const prayerPoints = document.getElementById('prayer-points');
-                prayerPoints.innerHTML = data.interpretation.prayer_points.map(prayer => 
-                    `<p>• ${prayer}</p>`
-                ).join('');
+                    // Update application points
+                    const applicationPoints = document.getElementById('application-points');
+                    if (interpretationData.application_points) {
+                        applicationPoints.innerHTML = interpretationData.application_points
+                            .map(point => `<p>• ${point}</p>`)
+                            .join('');
+                    }
 
-                // Smooth scroll to interpretation
-                interpretation.scrollIntoView({ behavior: 'smooth' });
+                    // Update prayer points
+                    const prayerPoints = document.getElementById('prayer-points');
+                    if (interpretationData.prayer_points) {
+                        prayerPoints.innerHTML = interpretationData.prayer_points
+                            .map(prayer => `<p>• ${prayer}</p>`)
+                            .join('');
+                    }
+
+                    // Smooth scroll to interpretation
+                    interpretation.scrollIntoView({ behavior: 'smooth' });
+                } catch (error) {
+                    console.error('Error processing interpretation:', error);
+                    errorMessage.textContent = 'Error processing the vision interpretation. Please try again.';
+                    errorMessage.style.display = 'block';
+                }
             })
             .catch(error => {
                 loading.style.display = 'none';
