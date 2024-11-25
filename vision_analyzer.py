@@ -192,7 +192,7 @@ class VisionAnalyzer:
                 # Check if entity matches any biblical symbols
                 for symbol, data in self.symbol_dict.items():
                     if symbol in entity['synonyms'] or symbol in entity['word']:
-                        insights.append(f"The presence of '{entity['word']}' may symbolize {data['meaning']}")
+                        insights.append(f"'{entity['word'].title()}' in your vision: {data['meaning']}")
         
         # Generate insights based on actions
         movement_verbs = ['fly', 'run', 'walk', 'climb', 'fall']
@@ -200,16 +200,16 @@ class VisionAnalyzer:
         
         for action in actions:
             if action['lemma'] in movement_verbs:
-                insights.append(f"The {action['verb']}ing motion suggests spiritual movement or progression")
+                insights.append(f"The action of {action['verb']}ing suggests a spiritual journey or progression in your faith walk")
             elif action['lemma'] in transformation_verbs:
-                insights.append("This vision indicates a period of spiritual transformation or growth")
+                insights.append("The transformative elements in this vision point to a season of spiritual growth and development")
         
         # Generate insights based on emotions
         for emotion, intensity in emotions.items():
             if emotion == 'fear' and 'protection' in themes:
-                insights.append("The presence of fear alongside protective elements suggests God's reassurance in challenging times")
+                insights.append("The interplay of fear and protective elements suggests God's reassurance during challenging times")
             elif emotion == 'peace' and 'warfare' in themes:
-                insights.append("The contrast between peace and conflict points to God's peace that surpasses understanding")
+                insights.append("The presence of peace amidst conflict reflects God's promise of tranquility that surpasses understanding")
         
         # Ensure we have at least one insight
         if not insights:

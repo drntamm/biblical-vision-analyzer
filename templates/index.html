@@ -4,185 +4,342 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Biblical Vision Analyzer</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Lora:ital@0;1&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #3b5c7c;
+            --secondary-color: #f0f4f8;
+            --accent-color: #e3b505;
+            --text-color: #2d3748;
+            --light-text: #718096;
+            --success-color: #48bb78;
+            --error-color: #f56565;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background: linear-gradient(135deg, #f6f9fc 0%, #ffffff 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem 0;
+            background: linear-gradient(to right, rgba(59, 92, 124, 0.1), rgba(59, 92, 124, 0.05));
+            border-radius: 1rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            font-family: 'Lora', serif;
+            font-style: italic;
+            color: var(--light-text);
+            font-size: 1.1rem;
+        }
+
+        .vision-form {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid var(--secondary-color);
+            border-radius: 0.5rem;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+            resize: vertical;
+            min-height: 150px;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .analyze-btn {
+            display: block;
+            width: 100%;
+            max-width: 300px;
+            margin: 2rem auto;
+            padding: 1rem 2rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .analyze-btn:hover {
+            background: #2d4b6b;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 92, 124, 0.2);
+        }
+
+        .analyze-btn:active {
+            transform: translateY(0);
+        }
+
+        .analyze-btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 120%;
+            height: 120%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translate(-50%, -50%) scale(0);
+            border-radius: 50%;
+            transition: transform 0.5s ease-out;
+        }
+
+        .analyze-btn:hover::after {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        #interpretation {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .interpretation-section {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--secondary-color);
+        }
+
+        .interpretation-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .section-title {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .scripture-reference {
+            font-family: 'Lora', serif;
+            font-style: italic;
+            color: var(--light-text);
+            margin-top: 0.5rem;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--secondary-color);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            color: var(--error-color);
+            background: #fff5f5;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .vision-form {
+                padding: 1.5rem;
+            }
+        }
+    </style>
 </head>
-<body class="bg-gray-100">
-    <div class="container mx-auto px-4 py-8">
-        <header class="text-center mb-12">
-            <h1 class="text-4xl font-bold text-indigo-700 mb-2">Biblical Vision Analyzer</h1>
-            <p class="text-gray-600">Analyze and interpret spiritual visions through biblical principles</p>
+<body>
+    <div class="container">
+        <header>
+            <h1>Biblical Vision Analyzer</h1>
+            <p class="subtitle">Discover spiritual insights through biblical interpretation</p>
         </header>
 
-        <div class="max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-6">
-            <form id="visionForm" class="space-y-6">
-                <div>
-                    <label for="title" class="block text-sm font-medium text-gray-700">Vision Title</label>
-                    <input type="text" id="title" name="title" required
-                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                </div>
-
-                <div>
-                    <label for="description" class="block text-sm font-medium text-gray-700">Vision Description</label>
-                    <textarea id="description" name="description" rows="4" required
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            placeholder="Describe your vision in detail..."></textarea>
-                </div>
-
-                <div>
-                    <label for="context" class="block text-sm font-medium text-gray-700">Personal Context (Optional)</label>
-                    <textarea id="context" name="context" rows="2"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            placeholder="Any relevant spiritual context, life circumstances, or specific questions..."></textarea>
-                    <p class="mt-1 text-sm text-gray-500">This helps provide more relevant interpretation and guidance</p>
-                </div>
-
-                <div class="bg-blue-50 p-4 rounded-md">
-                    <h3 class="text-sm font-medium text-blue-800 mb-2">Prayer Guidance</h3>
-                    <p class="text-sm text-blue-700">Before submitting your vision for analysis, consider these prayer points:</p>
-                    <ul class="mt-2 text-sm text-blue-600 list-disc list-inside space-y-1">
-                        <li>Ask for wisdom and discernment in understanding (James 1:5)</li>
-                        <li>Pray for clarity and revelation (Ephesians 1:17-18)</li>
-                        <li>Seek alignment with God's Word (Psalm 119:18)</li>
-                        <li>Request guidance from the Holy Spirit (John 16:13)</li>
-                    </ul>
-                </div>
-
-                <div class="text-right">
-                    <button type="submit"
-                            class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        Analyze Vision
-                    </button>
-                </div>
-            </form>
-
-            <div id="interpretationResult" class="mt-8 hidden">
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">Vision Analysis</h2>
-                <div class="space-y-6">
-                    <div id="interpretationText" class="prose max-w-none bg-gray-50 p-6 rounded-md whitespace-pre-line"></div>
-                    
-                    <div class="bg-yellow-50 p-4 rounded-md">
-                        <h3 class="text-sm font-medium text-yellow-800 mb-2">Important Note</h3>
-                        <p class="text-sm text-yellow-700">
-                            This interpretation is provided as a tool for reflection and should be:
-                        </p>
-                        <ul class="mt-2 text-sm text-yellow-600 list-disc list-inside space-y-1">
-                            <li>Prayerfully considered and tested against Scripture</li>
-                            <li>Discussed with mature spiritual leaders</li>
-                            <li>Used alongside personal Bible study and prayer</li>
-                            <li>Understood as guidance, not definitive interpretation</li>
-                        </ul>
-                    </div>
-                </div>
+        <div class="vision-form">
+            <div class="form-group">
+                <label for="vision">Describe Your Vision or Dream</label>
+                <textarea id="vision" placeholder="Share what you saw, felt, or experienced in your vision or dream..."></textarea>
             </div>
+            <div class="form-group">
+                <label for="context">Additional Context (Optional)</label>
+                <textarea id="context" placeholder="Share any relevant context or circumstances surrounding your vision..."></textarea>
+            </div>
+            <button class="analyze-btn" onclick="analyzeVision()">Analyze Vision</button>
         </div>
 
-        <div class="mt-12 max-w-3xl mx-auto">
-            <h2 class="text-2xl font-bold text-gray-900 mb-4">Biblical Symbols Reference</h2>
-            <div class="grid gap-6">
-                <div id="elementsSymbols" class="space-y-4">
-                    <h3 class="text-xl font-semibold text-indigo-600">Elements</h3>
-                    <div class="grid gap-4 md:grid-cols-2"></div>
-                </div>
-                <div id="numbersSymbols" class="space-y-4">
-                    <h3 class="text-xl font-semibold text-indigo-600">Numbers</h3>
-                    <div class="grid gap-4 md:grid-cols-2"></div>
-                </div>
-                <div id="animalsSymbols" class="space-y-4">
-                    <h3 class="text-xl font-semibold text-indigo-600">Animals</h3>
-                    <div class="grid gap-4 md:grid-cols-2"></div>
-                </div>
-                <div id="natureSymbols" class="space-y-4">
-                    <h3 class="text-xl font-semibold text-indigo-600">Nature</h3>
-                    <div class="grid gap-4 md:grid-cols-2"></div>
-                </div>
-                <div id="objectsSymbols" class="space-y-4">
-                    <h3 class="text-xl font-semibold text-indigo-600">Objects</h3>
-                    <div class="grid gap-4 md:grid-cols-2"></div>
-                </div>
-                <div id="foodSymbols" class="space-y-4">
-                    <h3 class="text-xl font-semibold text-indigo-600">Food</h3>
-                    <div class="grid gap-4 md:grid-cols-2"></div>
-                </div>
-                <div id="eventsSymbols" class="space-y-4">
-                    <h3 class="text-xl font-semibold text-indigo-600">Events</h3>
-                    <div class="grid gap-4 md:grid-cols-2"></div>
-                </div>
-            </div>
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            <p>Analyzing your vision...</p>
         </div>
 
-        <footer class="mt-12 text-center text-sm text-gray-500">
-            <p class="mb-2">This tool is meant to be used as a supplement to personal Bible study and prayer.</p>
-            <p>Always seek wisdom from Scripture and spiritual leaders for confirmation and guidance.</p>
-        </footer>
+        <div class="error-message"></div>
+
+        <div id="interpretation">
+            <div class="interpretation-section">
+                <h3 class="section-title">Pattern Insights</h3>
+                <div id="pattern-insights"></div>
+            </div>
+            <div class="interpretation-section">
+                <h3 class="section-title">Biblical Commentary</h3>
+                <div id="biblical-commentary"></div>
+            </div>
+            <div class="interpretation-section">
+                <h3 class="section-title">Scripture for Meditation</h3>
+                <div id="scripture-references"></div>
+            </div>
+            <div class="interpretation-section">
+                <h3 class="section-title">Application Points</h3>
+                <div id="application-points"></div>
+            </div>
+            <div class="interpretation-section">
+                <h3 class="section-title">Prayer Guide</h3>
+                <div id="prayer-points"></div>
+            </div>
+        </div>
     </div>
 
     <script>
-        document.getElementById('visionForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const submitButton = e.target.querySelector('button[type="submit"]');
-            submitButton.disabled = true;
-            submitButton.innerHTML = 'Analyzing...';
-            
-            const formData = {
-                title: document.getElementById('title').value,
-                description: document.getElementById('description').value,
-                context: document.getElementById('context').value
-            };
+        function analyzeVision() {
+            const vision = document.getElementById('vision').value.trim();
+            const context = document.getElementById('context').value.trim();
+            const loading = document.querySelector('.loading');
+            const interpretation = document.getElementById('interpretation');
+            const errorMessage = document.querySelector('.error-message');
 
-            try {
-                const response = await axios.post('/submit_vision', formData);
-                const interpretation = response.data.interpretation;
-                
-                document.getElementById('interpretationText').textContent = interpretation;
-                document.getElementById('interpretationResult').classList.remove('hidden');
-            } catch (error) {
+            if (!vision) {
+                errorMessage.textContent = 'Please describe your vision before analyzing.';
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            // Hide error message if it was shown
+            errorMessage.style.display = 'none';
+
+            // Show loading spinner
+            loading.style.display = 'block';
+            interpretation.style.display = 'none';
+
+            fetch('/submit_vision', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    description: vision,
+                    context: context
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                loading.style.display = 'none';
+                interpretation.style.display = 'block';
+
+                // Update pattern insights
+                const patternInsights = document.getElementById('pattern-insights');
+                patternInsights.innerHTML = data.interpretation.pattern_insights.map(insight => 
+                    `<p>• ${insight}</p>`
+                ).join('');
+
+                // Update scripture references
+                const scriptureRefs = document.getElementById('scripture-references');
+                scriptureRefs.innerHTML = data.interpretation.scripture_references.map(([ref, text]) => 
+                    `<p>• ${ref}</p><p class="scripture-reference">"${text}"</p>`
+                ).join('');
+
+                // Update application points
+                const applicationPoints = document.getElementById('application-points');
+                applicationPoints.innerHTML = data.interpretation.application_points.map(point => 
+                    `<p>• ${point}</p>`
+                ).join('');
+
+                // Update prayer points
+                const prayerPoints = document.getElementById('prayer-points');
+                prayerPoints.innerHTML = data.interpretation.prayer_points.map(prayer => 
+                    `<p>• ${prayer}</p>`
+                ).join('');
+
+                // Smooth scroll to interpretation
+                interpretation.scrollIntoView({ behavior: 'smooth' });
+            })
+            .catch(error => {
+                loading.style.display = 'none';
+                errorMessage.textContent = 'An error occurred while analyzing your vision. Please try again.';
+                errorMessage.style.display = 'block';
                 console.error('Error:', error);
-                alert('An error occurred while analyzing the vision. Please try again.');
-            } finally {
-                submitButton.disabled = false;
-                submitButton.innerHTML = 'Analyze Vision';
-            }
-        });
-
-        // Load biblical symbols
-        async function loadSymbols() {
-            try {
-                const response = await axios.get('/symbols');
-                const symbols = response.data;
-                
-                // Group symbols by category
-                const symbolsByCategory = {};
-                symbols.forEach(symbol => {
-                    if (!symbolsByCategory[symbol.category]) {
-                        symbolsByCategory[symbol.category] = [];
-                    }
-                    symbolsByCategory[symbol.category].push(symbol);
-                });
-                
-                // Populate each category section
-                Object.entries(symbolsByCategory).forEach(([category, categorySymbols]) => {
-                    const containerDiv = document.querySelector(`#${category.toLowerCase()}Symbols .grid`);
-                    if (containerDiv) {
-                        categorySymbols.forEach(symbol => {
-                            const symbolElement = document.createElement('div');
-                            symbolElement.className = 'bg-white p-4 rounded-lg shadow';
-                            symbolElement.innerHTML = `
-                                <h3 class="font-semibold text-lg text-indigo-600">${symbol.symbol}</h3>
-                                <p class="text-gray-600 mt-1">${symbol.meaning}</p>
-                                <p class="text-sm text-gray-500 mt-2">References: ${symbol.references}</p>
-                            `;
-                            containerDiv.appendChild(symbolElement);
-                        });
-                    }
-                });
-            } catch (error) {
-                console.error('Error loading symbols:', error);
-            }
+            });
         }
-
-        loadSymbols();
     </script>
 </body>
 </html>
