@@ -7,3 +7,4 @@ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.0
 psycopg2-binary==2.9.7
 python-dotenv==1.0.0
 SQLAlchemy==2.0.21
+flask-cors==4.0.0
