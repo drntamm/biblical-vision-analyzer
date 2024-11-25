@@ -356,6 +356,82 @@
     </div>
 
     <script>
+        function loadSymbols() {
+            const categoryButtons = document.querySelector('.category-buttons');
+            const symbolsContent = document.querySelector('.symbols-content');
+            
+            if (!categoryButtons || !symbolsContent) {
+                console.log('Symbol containers not found, skipping symbol loading');
+                return;
+            }
+
+            fetch('https://biblical-vision-analyzer.onrender.com/symbols')
+                .then(response => response.json())
+                .then(data => {
+                    // Clear existing buttons
+                    categoryButtons.innerHTML = '';
+                    
+                    if (!data || typeof data !== 'object') {
+                        console.error('Invalid symbols data received');
+                        return;
+                    }
+
+                    // Create category buttons
+                    Object.keys(data).forEach(category => {
+                        const button = document.createElement('button');
+                        button.className = 'category-btn';
+                        button.textContent = category;
+                        button.onclick = () => showSymbols(category, data[category]);
+                        categoryButtons.appendChild(button);
+                    });
+                    
+                    // Show first category by default if there are categories
+                    const categories = Object.keys(data);
+                    if (categories.length > 0) {
+                        const firstCategory = categories[0];
+                        const firstButton = categoryButtons.firstChild;
+                        if (firstButton) {
+                            firstButton.classList.add('active');
+                            showSymbols(firstCategory, data[firstCategory]);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading symbols:', error);
+                    symbolsContent.innerHTML = '<p>Unable to load biblical symbols at this time.</p>';
+                });
+        }
+
+        function showSymbols(category, symbols) {
+            const symbolsContent = document.querySelector('.symbols-content');
+            const categoryButtons = document.querySelectorAll('.category-btn');
+            
+            if (!symbolsContent || !categoryButtons) return;
+
+            // Update active button
+            categoryButtons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent === category) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Display symbols
+            if (Array.isArray(symbols)) {
+                symbolsContent.innerHTML = symbols
+                    .map(symbol => `
+                        <div class="symbol-item">
+                            <h3>${symbol.symbol}</h3>
+                            <p>${symbol.meaning}</p>
+                            ${symbol.scripture_references ? `<p class="scripture">${symbol.scripture_references}</p>` : ''}
+                        </div>
+                    `)
+                    .join('');
+            } else {
+                symbolsContent.innerHTML = '<p>No symbols available for this category.</p>';
+            }
+        }
+
         function analyzeVision() {
             const vision = document.getElementById('vision').value.trim();
             const context = document.getElementById('context').value.trim();
@@ -402,112 +478,62 @@
                     context: context
                 })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 loading.style.display = 'none';
                 interpretation.style.display = 'block';
 
+                if (!data || !data.interpretation) {
+                    throw new Error('Invalid response format');
+                }
+
                 try {
-                    // Parse the interpretation string into an object if it's not already
+                    // Parse the interpretation if it's a string
                     const interpretationData = typeof data.interpretation === 'string' 
                         ? JSON.parse(data.interpretation) 
                         : data.interpretation;
 
-                    // Update pattern insights
-                    const patternInsights = document.getElementById('pattern-insights');
-                    if (interpretationData.pattern_insights) {
-                        patternInsights.innerHTML = interpretationData.pattern_insights
-                            .map(insight => `<p>• ${insight}</p>`)
-                            .join('');
-                    }
+                    // Update sections if they exist
+                    const sections = {
+                        'pattern-insights': interpretationData.pattern_insights || [],
+                        'scripture-references': interpretationData.scripture_references || [],
+                        'application-points': interpretationData.application_points || [],
+                        'prayer-points': interpretationData.prayer_points || []
+                    };
 
-                    // Update scripture references
-                    const scriptureRefs = document.getElementById('scripture-references');
-                    if (interpretationData.scripture_references) {
-                        scriptureRefs.innerHTML = interpretationData.scripture_references
-                            .map(([ref, text]) => `<p>• ${ref}</p><p class="scripture-reference">"${text}"</p>`)
-                            .join('');
-                    }
-
-                    // Update application points
-                    const applicationPoints = document.getElementById('application-points');
-                    if (interpretationData.application_points) {
-                        applicationPoints.innerHTML = interpretationData.application_points
-                            .map(point => `<p>• ${point}</p>`)
-                            .join('');
-                    }
-
-                    // Update prayer points
-                    const prayerPoints = document.getElementById('prayer-points');
-                    if (interpretationData.prayer_points) {
-                        prayerPoints.innerHTML = interpretationData.prayer_points
-                            .map(prayer => `<p>• ${prayer}</p>`)
-                            .join('');
-                    }
+                    // Update each section
+                    Object.entries(sections).forEach(([id, content]) => {
+                        const element = document.getElementById(id);
+                        if (element) {
+                            if (id === 'scripture-references' && Array.isArray(content)) {
+                                element.innerHTML = content
+                                    .map(([ref, text]) => `<p>• ${ref}</p><p class="scripture-reference">"${text}"</p>`)
+                                    .join('');
+                            } else if (Array.isArray(content)) {
+                                element.innerHTML = content
+                                    .map(item => `<p>• ${item}</p>`)
+                                    .join('');
+                            }
+                        }
+                    });
 
                     // Smooth scroll to interpretation
                     interpretation.scrollIntoView({ behavior: 'smooth' });
                 } catch (error) {
                     console.error('Error processing interpretation:', error);
-                    errorMessage.textContent = 'Error processing the vision interpretation. Please try again.';
-                    errorMessage.style.display = 'block';
+                    throw new Error('Error processing the vision interpretation');
                 }
             })
             .catch(error => {
                 loading.style.display = 'none';
-                errorMessage.textContent = 'An error occurred while analyzing your vision. Please try again.';
+                errorMessage.textContent = error.message || 'An error occurred while analyzing your vision. Please try again.';
                 errorMessage.style.display = 'block';
                 console.error('Error:', error);
-            });
-        }
-
-        function loadSymbols() {
-            fetch('/symbols')
-                .then(response => response.json())
-                .then(data => {
-                    const categoryButtons = document.querySelector('.category-buttons');
-                    const symbolsContent = document.querySelector('.symbols-content');
-                    
-                    // Create category buttons
-                    Object.keys(data).forEach(category => {
-                        const button = document.createElement('button');
-                        button.className = 'category-btn';
-                        button.textContent = category;
-                        button.onclick = () => showSymbols(category, data[category]);
-                        categoryButtons.appendChild(button);
-                    });
-                    
-                    // Show first category by default
-                    const firstCategory = Object.keys(data)[0];
-                    const firstButton = categoryButtons.firstChild;
-                    firstButton.classList.add('active');
-                    showSymbols(firstCategory, data[firstCategory]);
-                })
-                .catch(error => console.error('Error loading symbols:', error));
-        }
-
-        function showSymbols(category, symbols) {
-            // Update active button
-            document.querySelectorAll('.category-btn').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.textContent === category) {
-                    btn.classList.add('active');
-                }
-            });
-
-            // Show symbols
-            const symbolsContent = document.querySelector('.symbols-content');
-            symbolsContent.innerHTML = '';
-            
-            symbols.forEach(symbol => {
-                const card = document.createElement('div');
-                card.className = 'symbol-card';
-                card.innerHTML = `
-                    <div class="symbol-name">${symbol.symbol}</div>
-                    <div class="symbol-meaning">${symbol.meaning}</div>
-                    <div class="symbol-references">${symbol.scripture_references}</div>
-                `;
-                symbolsContent.appendChild(card);
             });
         }
 
