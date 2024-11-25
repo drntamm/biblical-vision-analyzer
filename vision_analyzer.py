@@ -81,8 +81,22 @@ class VisionAnalyzer:
         }
 
     def analyze_vision(self, description, context=""):
+        """Analyze a vision description and return structured insights."""
         try:
+            # Input validation
+            if not description or not description.strip():
+                return {
+                    'pattern_insights': ['Please provide a description of your vision.'],
+                    'themes': ['guidance'],
+                    'scripture_references': [
+                        ('James 1:5', 'If any of you lacks wisdom, you should ask God, who gives generously to all without finding fault.')
+                    ],
+                    'application_points': ['Take time to write down your vision in detail.'],
+                    'prayer_points': ['Ask for clarity and understanding in remembering and describing your vision.']
+                }
+
             # Process the vision text
+            description = description.strip()
             doc = self.nlp(description.lower())
             
             # Extract key elements
@@ -105,6 +119,18 @@ class VisionAnalyzer:
             # Generate prayer points
             prayer_points = self._generate_prayer_points(themes, entities, emotions)
             
+            # Ensure we have at least some content in each category
+            if not pattern_insights:
+                pattern_insights = ['This vision appears to have spiritual significance. Continue in prayer for further understanding.']
+            if not themes:
+                themes = ['guidance']
+            if not scripture_references:
+                scripture_references = [('Proverbs 3:5-6', 'Trust in the LORD with all your heart and lean not on your own understanding.')]
+            if not application_points:
+                application_points = ['Seek wisdom through prayer and meditation on Scripture.']
+            if not prayer_points:
+                prayer_points = ['Lord, grant me wisdom and understanding regarding this vision.']
+            
             return {
                 'pattern_insights': pattern_insights,
                 'themes': list(themes),
@@ -115,7 +141,16 @@ class VisionAnalyzer:
             
         except Exception as e:
             logging.error(f"Error in analyze_vision: {str(e)}")
-            return self._generate_fallback_response()
+            # Return a graceful fallback response
+            return {
+                'pattern_insights': ['We encountered an issue analyzing your vision. Please try again.'],
+                'themes': ['guidance'],
+                'scripture_references': [
+                    ('James 1:5', 'If any of you lacks wisdom, you should ask God, who gives generously to all without finding fault.')
+                ],
+                'application_points': ['Continue in prayer and meditation on your vision.'],
+                'prayer_points': ['Ask for divine guidance and clarity regarding your vision.']
+            }
 
     def _extract_entities(self, doc):
         entities = defaultdict(list)
