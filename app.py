@@ -105,6 +105,15 @@ def get_symbols():
         'references': s.scripture_references
     } for s in symbols])
 
+@app.route('/init_database', methods=['GET'])
+def initialize_database():
+    try:
+        db.create_all()
+        init_db()
+        return jsonify({"message": "Database initialized successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 def init_db():
     with app.app_context():
         db.create_all()
@@ -112,5 +121,7 @@ def init_db():
         populate_database(db, BiblicalSymbol)
 
 if __name__ == '__main__':
-    init_db()
+    with app.app_context():
+        db.create_all()
+        init_db()
     app.run(debug=True, port=5001)
