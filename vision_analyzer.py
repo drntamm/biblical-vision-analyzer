@@ -125,33 +125,54 @@ class VisionAnalyzer:
 
             # Process the vision text
             description = description.strip()
-            doc = self.nlp(description.lower())
             
-            # Extract key elements
-            entities = self._extract_entities(doc)
-            actions = self._extract_actions(doc)
-            emotions = self._extract_emotions(doc)
+            # Split into separate visions if multiple are present
+            vision_segments = re.split(r'(?i)(?:in another vision|\.(?:\s+|\s*$))', description)
+            vision_segments = [seg.strip() for seg in vision_segments if seg.strip()]
             
-            # Identify themes
-            themes = self._identify_themes(description, entities, actions, emotions)
+            # Initialize combined results
+            all_entities = defaultdict(list)
+            all_actions = []
+            all_emotions = defaultdict(int)
+            all_themes = set()
             
-            # Generate insights
-            pattern_insights = self._generate_dynamic_insights(entities, actions, emotions, themes)
+            # Process each vision segment
+            for segment in vision_segments:
+                try:
+                    # Process with spaCy
+                    doc = self.nlp(segment.lower())
+                    
+                    # Extract elements from each segment
+                    segment_entities = self._extract_entities(doc)
+                    segment_actions = self._extract_actions(doc)
+                    segment_emotions = self._extract_emotions(doc)
+                    
+                    # Combine results
+                    for key, value in segment_entities.items():
+                        all_entities[key].extend(value)
+                    all_actions.extend(segment_actions)
+                    for emotion, count in segment_emotions.items():
+                        all_emotions[emotion] += count
+                    
+                    # Identify themes for this segment
+                    segment_themes = self._identify_themes(segment, segment_entities, segment_actions, segment_emotions)
+                    all_themes.update(segment_themes)
+                    
+                except Exception as e:
+                    logging.error(f"Error processing vision segment '{segment}': {str(e)}")
+                    continue
             
-            # Get relevant scriptures
-            scripture_references = self._get_relevant_scriptures(themes, entities, emotions)
-            
-            # Generate application points
-            application_points = self._generate_application_points(themes, entities, actions, emotions)
-            
-            # Generate prayer points
-            prayer_points = self._generate_prayer_points(themes, entities, emotions)
+            # Generate insights based on combined results
+            pattern_insights = self._generate_dynamic_insights(all_entities, all_actions, all_emotions, all_themes)
+            scripture_references = self._get_relevant_scriptures(all_themes, all_entities, all_emotions)
+            application_points = self._generate_application_points(all_themes, all_entities, all_actions, all_emotions)
+            prayer_points = self._generate_prayer_points(all_themes, all_entities, all_emotions)
             
             # Ensure we have at least some content in each category
             if not pattern_insights:
                 pattern_insights = ['This vision appears to have spiritual significance. Continue in prayer for further understanding.']
-            if not themes:
-                themes = ['guidance']
+            if not all_themes:
+                all_themes = {'guidance'}
             if not scripture_references:
                 scripture_references = [('Proverbs 3:5-6', 'Trust in the LORD with all your heart and lean not on your own understanding.')]
             if not application_points:
@@ -161,7 +182,7 @@ class VisionAnalyzer:
             
             return {
                 'pattern_insights': pattern_insights,
-                'themes': list(themes),
+                'themes': list(all_themes),
                 'scripture_references': scripture_references,
                 'application_points': application_points,
                 'prayer_points': prayer_points
@@ -169,16 +190,7 @@ class VisionAnalyzer:
             
         except Exception as e:
             logging.error(f"Error in analyze_vision: {str(e)}")
-            # Return a graceful fallback response
-            return {
-                'pattern_insights': ['We encountered an issue analyzing your vision. Please try again.'],
-                'themes': ['guidance'],
-                'scripture_references': [
-                    ('James 1:5', 'If any of you lacks wisdom, you should ask God, who gives generously to all without finding fault.')
-                ],
-                'application_points': ['Continue in prayer and meditation on your vision.'],
-                'prayer_points': ['Ask for divine guidance and clarity regarding your vision.']
-            }
+            raise Exception(f"Vision analysis error: {str(e)}")
 
     def _extract_entities(self, doc):
         entities = defaultdict(list)
@@ -230,31 +242,22 @@ class VisionAnalyzer:
     def _identify_themes(self, description, entities, actions, emotions):
         themes = set()
         
-        # Split into separate visions if multiple are present
-        vision_segments = re.split(r'(?i)(?:in another vision|\.(?:\s+|\s*$))', description)
-        vision_segments = [seg.strip() for seg in vision_segments if seg.strip()]
+        # Theme detection
+        if any(word in description.lower() for word in ['chase', 'run', 'escape', 'flee']):
+            themes.add('warfare')
+            themes.add('protection')
         
-        for segment in vision_segments:
-            # Process each vision segment separately
-            segment_doc = self.nlp(segment.lower())
-            segment_entities = self._extract_entities(segment_doc)
-            
-            # Theme detection for each segment
-            if any(word in segment.lower() for word in ['chase', 'run', 'escape', 'flee']):
-                themes.add('warfare')
-                themes.add('protection')
-            
-            if any(word in segment.lower() for word in ['power', 'electric', 'flow', 'energy']):
-                themes.add('empowerment')
-                themes.add('spiritual gifts')
-            
-            if 'cow' in segment_entities:
-                themes.add('provision')
-                themes.add('warning')
-            
-            if 'screen' in segment_entities:
-                themes.add('revelation')
-                themes.add('vision')
+        if any(word in description.lower() for word in ['power', 'electric', 'flow', 'energy']):
+            themes.add('empowerment')
+            themes.add('spiritual gifts')
+        
+        if 'cow' in entities:
+            themes.add('provision')
+            themes.add('warning')
+        
+        if 'screen' in entities:
+            themes.add('revelation')
+            themes.add('vision')
 
         return themes
 

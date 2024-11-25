@@ -73,6 +73,13 @@ def submit_vision():
         data = request.json
         logger.info(f"Received vision submission: {data}")
         
+        if not data or 'description' not in data:
+            logger.error("Missing vision description in request")
+            return jsonify({
+                "error": "Please provide a vision description",
+                "status": "error"
+            }), 400
+        
         # Create new vision entry
         new_vision = Vision(
             title=data.get('title', 'Untitled Vision'),
@@ -86,19 +93,19 @@ def submit_vision():
                 description=new_vision.description,
                 context=new_vision.context
             )
-            logger.info(f"Vision analysis completed: {analysis}")
+            logger.info("Vision analysis completed successfully")
             
-            # Convert analysis to string format
+            # Convert analysis to string format if it's a dict
             if isinstance(analysis, dict):
                 interpretation_text = f"""
 Pattern Insights:
-• {analysis.get('pattern_insights', ['No specific patterns identified'])[0]}
+{chr(8226)} {chr(10).join(analysis.get('pattern_insights', ['No specific patterns identified']))}
 
-Biblical Commentary and Prayer Guide:
+Biblical Commentary:
 Major Themes Identified:
 {chr(8226)} {chr(10).join(analysis.get('themes', ['No specific themes identified']))}
 
-Scripture for Meditation:
+Scripture References for Meditation:
 {chr(8226)} {chr(10).join([f"{ref}: {text}" for ref, text in analysis.get('scripture_references', [('No specific references', 'Please seek guidance')])])}
 
 Application Points:
@@ -111,10 +118,15 @@ Prayer Points:
                 interpretation_text = str(analysis)
             
             new_vision.interpretation = interpretation_text
+            logger.info("Interpretation text generated successfully")
             
         except Exception as e:
             logger.error(f"Error during vision analysis: {str(e)}")
-            new_vision.interpretation = "Error during analysis. Please try again."
+            return jsonify({
+                "error": "An error occurred while analyzing your vision. Please try again.",
+                "status": "error",
+                "details": str(e)
+            }), 500
         
         # Save to database
         try:
@@ -124,7 +136,11 @@ Prayer Points:
         except Exception as e:
             logger.error(f"Database error: {str(e)}")
             db.session.rollback()
-            return jsonify({"error": "Database error occurred"}), 500
+            return jsonify({
+                "error": "Database error occurred",
+                "status": "error",
+                "details": str(e)
+            }), 500
         
         return jsonify({
             "interpretation": new_vision.interpretation,
@@ -134,7 +150,11 @@ Prayer Points:
     except Exception as e:
         error_msg = f"Error processing vision: {str(e)}"
         logger.error(error_msg)
-        return jsonify({"error": error_msg}), 500
+        return jsonify({
+            "error": "An unexpected error occurred. Please try again.",
+            "status": "error",
+            "details": str(e)
+        }), 500
 
 @app.route('/symbols')
 def get_symbols():
