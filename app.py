@@ -3,10 +3,19 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from biblical_symbols import populate_database, BIBLICAL_SYMBOLS
 from vision_analyzer import VisionAnalyzer
+import os
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-secret-key-here'  # Change this in production
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///visions.db'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here')
+
+# Database configuration
+if os.environ.get('RENDER'):
+    # Use PostgreSQL on Render.com
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', '').replace('postgres://', 'postgresql://')
+else:
+    # Use SQLite locally
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///visions.db'
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
