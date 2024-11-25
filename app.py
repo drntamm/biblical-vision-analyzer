@@ -69,55 +69,72 @@ def home():
 
 @app.route('/submit_vision', methods=['POST'])
 def submit_vision():
-    data = request.json
-    new_vision = Vision(
-        title=data['title'],
-        description=data['description'],
-        context=data.get('context', '')
-    )
-    db.session.add(new_vision)
-    db.session.commit()
-    
-    # Analyze the vision using the enhanced analyzer
-    analysis = vision_analyzer.analyze_vision(
-        description=new_vision.description,
-        context=new_vision.context
-    )
-    
-    # Format the interpretation for display
-    interpretation_text = []
-    
-    if analysis['found_symbols']:
-        interpretation_text.append("Biblical Symbols Found in Your Vision:\n")
-        for symbol, meaning, references in analysis['interpretations']:
-            interpretation_text.extend([
-                f"• {symbol}:",
-                f"  Meaning: {meaning}",
-                f"  Scripture References: {references}",
-                ""
-            ])
-    
-    if analysis.get('pattern_insights'):
-        interpretation_text.append("\nPattern Insights:")
-        interpretation_text.extend(f"• {insight}" for insight in analysis['pattern_insights'])
-        interpretation_text.append("")
-    
-    # Add the formatted commentary
-    if analysis.get('formatted_commentary'):
-        interpretation_text.append("\nBiblical Commentary and Prayer Guide:")
-        interpretation_text.append(analysis['formatted_commentary'])
-    
-    interpretation_text.append("\nGuidance:")
-    interpretation_text.extend(f"• {guidance}" for guidance in analysis['general_guidance'])
-    
-    # Save the interpretation
-    new_vision.interpretation = "\n".join(interpretation_text)
-    db.session.commit()
-    
-    return jsonify({
-        'status': 'success',
-        'interpretation': new_vision.interpretation
-    })
+    try:
+        data = request.json
+        logger.info(f"Received vision submission: {data}")
+        
+        # Create new vision entry
+        new_vision = Vision(
+            title=data.get('title', 'Untitled Vision'),
+            description=data['description'],
+            context=data.get('context', '')
+        )
+        
+        # Analyze the vision
+        try:
+            analysis = vision_analyzer.analyze_vision(
+                description=new_vision.description,
+                context=new_vision.context
+            )
+            logger.info(f"Vision analysis completed: {analysis}")
+            
+            # Convert analysis to string format
+            if isinstance(analysis, dict):
+                interpretation_text = f"""
+Pattern Insights:
+• {analysis.get('pattern_insights', ['No specific patterns identified'])[0]}
+
+Biblical Commentary and Prayer Guide:
+Major Themes Identified:
+{chr(8226)} {chr(10).join(analysis.get('themes', ['No specific themes identified']))}
+
+Scripture for Meditation:
+{chr(8226)} {chr(10).join([f"{ref}: {text}" for ref, text in analysis.get('scripture_references', [('No specific references', 'Please seek guidance')])])}
+
+Application Points:
+{chr(8226)} {chr(10).join(analysis.get('application_points', ['Continue in prayer and meditation']))}
+
+Prayer Points:
+{chr(8226)} {chr(10).join(analysis.get('prayer_points', ['Seek divine guidance']))}
+"""
+            else:
+                interpretation_text = str(analysis)
+            
+            new_vision.interpretation = interpretation_text
+            
+        except Exception as e:
+            logger.error(f"Error during vision analysis: {str(e)}")
+            new_vision.interpretation = "Error during analysis. Please try again."
+        
+        # Save to database
+        try:
+            db.session.add(new_vision)
+            db.session.commit()
+            logger.info("Vision saved to database successfully")
+        except Exception as e:
+            logger.error(f"Database error: {str(e)}")
+            db.session.rollback()
+            return jsonify({"error": "Database error occurred"}), 500
+        
+        return jsonify({
+            "interpretation": new_vision.interpretation,
+            "status": "success"
+        })
+        
+    except Exception as e:
+        error_msg = f"Error processing vision: {str(e)}"
+        logger.error(error_msg)
+        return jsonify({"error": error_msg}), 500
 
 @app.route('/symbols')
 def get_symbols():
