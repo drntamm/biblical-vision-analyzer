@@ -147,49 +147,93 @@ def get_symbols():
 
 @app.route('/init_database', methods=['GET'])
 def initialize_database():
+    """Initialize the database with biblical symbols"""
     try:
-        # Drop all tables first
-        logger.info("Dropping existing tables...")
-        db.drop_all()
-        
-        # Create all tables
-        logger.info("Creating new tables...")
-        db.create_all()
-        
-        # Initialize the database with biblical symbols
-        logger.info("Populating biblical symbols...")
-        init_db()
-        
-        logger.info("Database initialization completed successfully")
-        return jsonify({
-            "message": "Database initialized successfully",
-            "details": "Tables created and populated with biblical symbols"
-        }), 200
+        with app.app_context():
+            # Drop all tables first
+            logger.info("Dropping existing tables...")
+            db.drop_all()
+            
+            # Create all tables
+            logger.info("Creating new tables...")
+            db.create_all()
+            
+            # Initialize the database with biblical symbols
+            logger.info("Populating biblical symbols...")
+            try:
+                # Clear existing symbols first
+                BiblicalSymbol.query.delete()
+                db.session.commit()
+                logger.info("Cleared existing symbols")
+                
+                # Add new symbols
+                for symbol_data in BIBLICAL_SYMBOLS:
+                    symbol = BiblicalSymbol(
+                        symbol=symbol_data['symbol'],
+                        meaning=symbol_data['meaning'],
+                        scripture_references=symbol_data.get('scripture_references', ''),
+                        category=symbol_data.get('category', 'General')
+                    )
+                    db.session.add(symbol)
+                
+                # Commit new symbols
+                db.session.commit()
+                logger.info(f"Added {len(BIBLICAL_SYMBOLS)} symbols to database")
+                
+                return jsonify({
+                    "status": "success",
+                    "message": "Database initialized successfully",
+                    "details": f"Added {len(BIBLICAL_SYMBOLS)} biblical symbols"
+                }), 200
+                
+            except Exception as e:
+                db.session.rollback()
+                error_msg = f"Error populating symbols: {str(e)}"
+                logger.error(error_msg)
+                return jsonify({"error": error_msg}), 500
+                
     except Exception as e:
         error_msg = f"Error initializing database: {str(e)}"
         logger.error(error_msg)
         return jsonify({"error": error_msg}), 500
 
-@app.route('/db_status', methods=['GET'])
+@app.route('/db_status')
 def database_status():
+    """Check database status and symbol count"""
     try:
-        # Test database connection
-        db.session.execute('SELECT 1')
-        
-        # Count records in BiblicalSymbol table
-        symbol_count = BiblicalSymbol.query.count()
-        
-        return jsonify({
-            "status": "connected",
-            "database_url": app.config['SQLALCHEMY_DATABASE_URI'].split('@')[-1],  # Only show host part
-            "biblical_symbols_count": symbol_count
-        }), 200
+        with app.app_context():
+            # Check if tables exist
+            inspector = db.inspect(db.engine)
+            tables = inspector.get_table_names()
+            
+            # Count symbols
+            symbol_count = BiblicalSymbol.query.count()
+            
+            # Get sample symbols
+            sample_symbols = BiblicalSymbol.query.limit(3).all()
+            sample_data = [
+                {
+                    "symbol": s.symbol,
+                    "meaning": s.meaning[:100] + "..." if len(s.meaning) > 100 else s.meaning
+                }
+                for s in sample_symbols
+            ]
+            
+            return jsonify({
+                "status": "success",
+                "database_url": app.config['SQLALCHEMY_DATABASE_URI'].split('@')[-1] if '@' in app.config['SQLALCHEMY_DATABASE_URI'] else 'sqlite',
+                "tables": tables,
+                "symbol_count": symbol_count,
+                "sample_symbols": sample_data
+            }), 200
+            
     except Exception as e:
-        error_msg = f"Database error: {str(e)}"
+        error_msg = f"Error checking database status: {str(e)}"
         logger.error(error_msg)
         return jsonify({
             "status": "error",
-            "error": error_msg
+            "error": error_msg,
+            "database_url": app.config['SQLALCHEMY_DATABASE_URI'].split('@')[-1] if '@' in app.config['SQLALCHEMY_DATABASE_URI'] else 'sqlite'
         }), 500
 
 def init_db():
