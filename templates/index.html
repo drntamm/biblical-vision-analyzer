@@ -22,48 +22,61 @@
             box-sizing: border-box;
         }
 
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow-x: hidden;
+        }
+
         body {
             font-family: 'Montserrat', sans-serif;
             line-height: 1.6;
             color: var(--text-color);
             background: linear-gradient(135deg, #f6f9fc 0%, #ffffff 100%);
-            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         .container {
-            max-width: 800px;
+            flex: 1;
+            width: 100%;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 2rem;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
 
         header {
             text-align: center;
-            margin-bottom: 3rem;
-            padding: 2rem 0;
+            padding: 2rem 1rem;
             background: linear-gradient(to right, rgba(59, 92, 124, 0.1), rgba(59, 92, 124, 0.05));
             border-radius: 1rem;
+            margin-bottom: 2rem;
         }
 
         h1 {
-            font-size: 2.5rem;
+            font-size: clamp(1.5rem, 5vw, 2.5rem);
             color: var(--primary-color);
             margin-bottom: 1rem;
             font-weight: 600;
         }
 
         .subtitle {
+            font-size: clamp(1rem, 3vw, 1.2rem);
+            color: var(--light-text);
             font-family: 'Lora', serif;
             font-style: italic;
-            color: var(--light-text);
-            font-size: 1.1rem;
         }
 
         .vision-form {
             background: white;
-            padding: 2rem;
+            padding: 1.5rem;
             border-radius: 1rem;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             margin-bottom: 2rem;
+            flex: 1;
         }
 
         .form-group {
@@ -75,6 +88,7 @@
             margin-bottom: 0.5rem;
             color: var(--primary-color);
             font-weight: 600;
+            font-size: clamp(0.9rem, 2vw, 1rem);
         }
 
         textarea {
@@ -83,10 +97,10 @@
             border: 2px solid var(--secondary-color);
             border-radius: 0.5rem;
             font-family: 'Montserrat', sans-serif;
-            font-size: 1rem;
+            font-size: clamp(0.9rem, 2vw, 1rem);
             transition: border-color 0.3s ease;
             resize: vertical;
-            min-height: 150px;
+            min-height: 120px;
         }
 
         textarea:focus {
@@ -94,101 +108,91 @@
             border-color: var(--primary-color);
         }
 
-        .analyze-btn {
-            display: block;
+        button {
+            display: inline-block;
+            padding: 0.8rem 1.5rem;
+            font-size: clamp(0.9rem, 2vw, 1rem);
+            font-weight: 600;
+            color: white;
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
             width: 100%;
             max-width: 300px;
-            margin: 2rem auto;
-            padding: 1rem 2rem;
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 2rem;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            position: relative;
-            overflow: hidden;
+            margin: 0 auto;
         }
 
-        .analyze-btn:hover {
-            background: #2d4b6b;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(59, 92, 124, 0.2);
+        button:hover {
+            background-color: #2d4b66;
         }
 
-        .analyze-btn:active {
-            transform: translateY(0);
-        }
-
-        .analyze-btn::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 120%;
-            height: 120%;
-            background: rgba(255, 255, 255, 0.1);
-            transform: translate(-50%, -50%) scale(0);
-            border-radius: 50%;
-            transition: transform 0.5s ease-out;
-        }
-
-        .analyze-btn:hover::after {
-            transform: translate(-50%, -50%) scale(1);
+        .button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 1rem;
         }
 
         #interpretation {
             background: white;
-            padding: 2rem;
+            padding: 1.5rem;
             border-radius: 1rem;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 2rem;
             display: none;
         }
 
         .interpretation-section {
             margin-bottom: 1.5rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid var(--secondary-color);
         }
 
-        .interpretation-section:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-
-        .section-title {
+        .interpretation-section h2 {
             color: var(--primary-color);
-            font-size: 1.2rem;
-            font-weight: 600;
+            font-size: clamp(1.1rem, 3vw, 1.3rem);
             margin-bottom: 1rem;
+            border-bottom: 2px solid var(--secondary-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .interpretation-section p {
+            margin-bottom: 0.8rem;
+            font-size: clamp(0.9rem, 2vw, 1rem);
+            line-height: 1.6;
         }
 
         .scripture-reference {
             font-family: 'Lora', serif;
             font-style: italic;
             color: var(--light-text);
-            margin-top: 0.5rem;
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
         }
 
         .loading {
             display: none;
             text-align: center;
-            margin: 2rem 0;
+            padding: 2rem;
         }
 
-        .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid var(--secondary-color);
-            border-top: 4px solid var(--primary-color);
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid var(--secondary-color);
+            border-top: 5px solid var(--primary-color);
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
+            margin: 0 auto;
+        }
+
+        .error-message {
+            display: none;
+            background-color: #fff5f5;
+            color: var(--error-color);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: clamp(0.9rem, 2vw, 1rem);
         }
 
         @keyframes spin {
@@ -196,13 +200,42 @@
             100% { transform: rotate(360deg); }
         }
 
-        .error-message {
-            color: var(--error-color);
-            background: #fff5f5;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin: 1rem 0;
-            display: none;
+        @media (max-width: 768px) {
+            .container {
+                padding: 0.5rem;
+            }
+
+            header {
+                padding: 1.5rem 1rem;
+            }
+
+            .vision-form {
+                padding: 1rem;
+            }
+
+            textarea {
+                min-height: 100px;
+            }
+
+            .interpretation-section {
+                margin-bottom: 1rem;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .vision-form {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 2rem;
+            }
+
+            .form-group:last-child {
+                grid-column: span 2;
+            }
+
+            .button-container {
+                grid-column: span 2;
+            }
         }
 
         .symbols-reference {
@@ -211,6 +244,11 @@
             background: white;
             border-radius: 1rem;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .symbols-categories {
+            display: flex;
+            flex-direction: column;
         }
 
         .category-buttons {
@@ -277,20 +315,6 @@
             color: var(--light-text);
             font-size: 0.9rem;
         }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 1rem;
-            }
-
-            h1 {
-                font-size: 2rem;
-            }
-
-            .vision-form {
-                padding: 1.5rem;
-            }
-        }
     </style>
 </head>
 <body>
@@ -309,11 +333,13 @@
                 <label for="context">Additional Context (Optional)</label>
                 <textarea id="context" placeholder="Share any relevant context or circumstances surrounding your vision..."></textarea>
             </div>
-            <button class="analyze-btn" onclick="analyzeVision()">Analyze Vision</button>
+            <div class="button-container">
+                <button class="analyze-btn" onclick="analyzeVision()">Analyze Vision</button>
+            </div>
         </div>
 
         <div class="loading">
-            <div class="loading-spinner"></div>
+            <div class="spinner"></div>
             <p>Analyzing your vision...</p>
         </div>
 
@@ -321,29 +347,29 @@
 
         <div id="interpretation">
             <div class="interpretation-section">
-                <h3 class="section-title">Pattern Insights</h3>
+                <h2>Pattern Insights</h2>
                 <div id="pattern-insights"></div>
             </div>
             <div class="interpretation-section">
-                <h3 class="section-title">Biblical Commentary</h3>
+                <h2>Biblical Commentary</h2>
                 <div id="biblical-commentary"></div>
             </div>
             <div class="interpretation-section">
-                <h3 class="section-title">Scripture for Meditation</h3>
+                <h2>Scripture for Meditation</h2>
                 <div id="scripture-references"></div>
             </div>
             <div class="interpretation-section">
-                <h3 class="section-title">Application Points</h3>
+                <h2>Application Points</h2>
                 <div id="application-points"></div>
             </div>
             <div class="interpretation-section">
-                <h3 class="section-title">Prayer Guide</h3>
+                <h2>Prayer Guide</h2>
                 <div id="prayer-points"></div>
             </div>
         </div>
 
         <div class="symbols-reference">
-            <h2 class="section-title">Biblical Symbols Reference</h2>
+            <h2>Biblical Symbols Reference</h2>
             <div class="symbols-categories">
                 <div class="category-buttons">
                     <!-- Category buttons will be dynamically added here -->
