@@ -4,6 +4,12 @@ from datetime import datetime
 from biblical_symbols import populate_database, BIBLICAL_SYMBOLS
 from vision_analyzer import VisionAnalyzer
 import os
+import sys
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here')
@@ -11,17 +17,34 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here')
 # Database configuration
 if os.environ.get('RENDER'):
     # Use PostgreSQL on Render.com
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', '').replace('postgres://', 'postgresql://')
+    database_url = os.environ.get('DATABASE_URL', '')
+    if database_url:
+        database_url = database_url.replace('postgres://', 'postgresql://')
+        logger.info(f"Using PostgreSQL database: {database_url.split('@')[1]}")  # Log only host part
+    else:
+        logger.error("DATABASE_URL not set in environment")
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 else:
     # Use SQLite locally
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///visions.db'
+    logger.info("Using SQLite database")
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-db = SQLAlchemy(app)
+try:
+    db = SQLAlchemy(app)
+    logger.info("SQLAlchemy initialized successfully")
+except Exception as e:
+    logger.error(f"Error initializing SQLAlchemy: {str(e)}")
+    raise
 
 # Initialize the vision analyzer
-vision_analyzer = VisionAnalyzer(BIBLICAL_SYMBOLS)
+try:
+    vision_analyzer = VisionAnalyzer(BIBLICAL_SYMBOLS)
+    logger.info("VisionAnalyzer initialized successfully")
+except Exception as e:
+    logger.error(f"Error initializing VisionAnalyzer: {str(e)}")
+    raise
 
 # Database Models
 class Vision(db.Model):
@@ -108,11 +131,49 @@ def get_symbols():
 @app.route('/init_database', methods=['GET'])
 def initialize_database():
     try:
+        # Drop all tables first
+        logger.info("Dropping existing tables...")
+        db.drop_all()
+        
+        # Create all tables
+        logger.info("Creating new tables...")
         db.create_all()
+        
+        # Initialize the database with biblical symbols
+        logger.info("Populating biblical symbols...")
         init_db()
-        return jsonify({"message": "Database initialized successfully"}), 200
+        
+        logger.info("Database initialization completed successfully")
+        return jsonify({
+            "message": "Database initialized successfully",
+            "details": "Tables created and populated with biblical symbols"
+        }), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        error_msg = f"Error initializing database: {str(e)}"
+        logger.error(error_msg)
+        return jsonify({"error": error_msg}), 500
+
+@app.route('/db_status', methods=['GET'])
+def database_status():
+    try:
+        # Test database connection
+        db.session.execute('SELECT 1')
+        
+        # Count records in BiblicalSymbol table
+        symbol_count = BiblicalSymbol.query.count()
+        
+        return jsonify({
+            "status": "connected",
+            "database_url": app.config['SQLALCHEMY_DATABASE_URI'].split('@')[-1],  # Only show host part
+            "biblical_symbols_count": symbol_count
+        }), 200
+    except Exception as e:
+        error_msg = f"Database error: {str(e)}"
+        logger.error(error_msg)
+        return jsonify({
+            "status": "error",
+            "error": error_msg
+        }), 500
 
 def init_db():
     with app.app_context():
@@ -122,6 +183,11 @@ def init_db():
 
 if __name__ == '__main__':
     with app.app_context():
-        db.create_all()
-        init_db()
+        try:
+            db.create_all()
+            init_db()
+            logger.info("Database initialized successfully")
+        except Exception as e:
+            logger.error(f"Error initializing database: {str(e)}")
+            raise
     app.run(debug=True, port=5001)
