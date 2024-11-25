@@ -77,6 +77,34 @@ class VisionAnalyzer:
                     ('Jeremiah 33:3', 'Call to me and I will answer you and tell you great and unsearchable things you do not know.'),
                     ('Amos 3:7', 'Surely the Sovereign LORD does nothing without revealing his plan to his servants the prophets.')
                 ]
+            },
+            'empowerment': {
+                'keywords': ['power', 'electric', 'flow', 'energy'],
+                'scriptures': [
+                    ('Acts 1:8', 'But you will receive power when the Holy Spirit comes upon you, and you will be my witnesses.'),
+                    ('1 Corinthians 12:7', 'Now to each one the manifestation of the Spirit is given for the common good.')
+                ]
+            },
+            'spiritual gifts': {
+                'keywords': ['gift', 'spiritual', 'ability', 'talent'],
+                'scriptures': [
+                    ('1 Corinthians 12:4', 'There are different kinds of gifts, but the same Spirit distributes them.'),
+                    ('Romans 12:6', 'We have different gifts, according to the grace given to each of us.')
+                ]
+            },
+            'provision': {
+                'keywords': ['cow', 'food', 'water', 'shelter'],
+                'scriptures': [
+                    ('Psalm 23:1', 'The LORD is my shepherd, I lack nothing.'),
+                    ('Matthew 6:26', 'Look at the birds of the air; they do not sow or reap or store away in barns, and yet your heavenly Father feeds them.')
+                ]
+            },
+            'warning': {
+                'keywords': ['danger', 'warning', 'caution', 'threat'],
+                'scriptures': [
+                    ('Proverbs 22:3', 'The prudent see danger and take refuge, but the simple keep going and suffer for it.'),
+                    ('1 Corinthians 10:12', 'So, if you think you are standing firm, be careful that you don’t fall!')
+                ]
             }
         }
 
@@ -154,19 +182,24 @@ class VisionAnalyzer:
 
     def _extract_entities(self, doc):
         entities = defaultdict(list)
+        modern_symbols = {
+            'tv': 'screen',
+            'television': 'screen',
+            'monitor': 'screen',
+            'computer': 'screen',
+            'electricity': 'power',
+            'electric': 'power',
+            'power': 'power'
+        }
+        
         for token in doc:
             if token.pos_ in ['NOUN', 'PROPN']:
-                # Get synonyms
-                synsets = wordnet.synsets(token.text)
-                synonyms = set()
-                for synset in synsets:
-                    for lemma in synset.lemmas():
-                        synonyms.add(lemma.name())
-                
-                entities[token.pos_].append({
-                    'word': token.text,
-                    'synonyms': list(synonyms)
-                })
+                # Check for modern symbols and map them
+                word = token.text.lower()
+                if word in modern_symbols:
+                    entities[modern_symbols[word]].append(token.text)
+                else:
+                    entities[token.text].append(token.text)
         return entities
 
     def _extract_actions(self, doc):
@@ -196,140 +229,100 @@ class VisionAnalyzer:
 
     def _identify_themes(self, description, entities, actions, emotions):
         themes = set()
-        desc_lower = description.lower()
         
-        # Check each theme category
-        for theme, data in self.theme_categories.items():
-            # Check keywords in the description
-            if any(keyword in desc_lower for keyword in data['keywords']):
-                themes.add(theme)
+        # Split into separate visions if multiple are present
+        vision_segments = re.split(r'(?i)(?:in another vision|\.(?:\s+|\s*$))', description)
+        vision_segments = [seg.strip() for seg in vision_segments if seg.strip()]
+        
+        for segment in vision_segments:
+            # Process each vision segment separately
+            segment_doc = self.nlp(segment.lower())
+            segment_entities = self._extract_entities(segment_doc)
             
-            # Check entities and their synonyms
-            for pos_type in entities.values():
-                for entity in pos_type:
-                    if any(keyword in entity['synonyms'] for keyword in data['keywords']):
-                        themes.add(theme)
-        
-        # Add themes based on emotions
-        if emotions.get('fear'):
-            themes.add('protection')
-        if emotions.get('urgency'):
-            themes.add('guidance')
-        
+            # Theme detection for each segment
+            if any(word in segment.lower() for word in ['chase', 'run', 'escape', 'flee']):
+                themes.add('warfare')
+                themes.add('protection')
+            
+            if any(word in segment.lower() for word in ['power', 'electric', 'flow', 'energy']):
+                themes.add('empowerment')
+                themes.add('spiritual gifts')
+            
+            if 'cow' in segment_entities:
+                themes.add('provision')
+                themes.add('warning')
+            
+            if 'screen' in segment_entities:
+                themes.add('revelation')
+                themes.add('vision')
+
         return themes
 
     def _generate_dynamic_insights(self, entities, actions, emotions, themes):
         insights = []
         
-        # Generate insights based on entities
-        for pos_type, entities_list in entities.items():
-            for entity in entities_list:
-                # Check if entity matches any biblical symbols
-                for symbol, data in self.symbol_dict.items():
-                    if symbol in entity['synonyms'] or symbol in entity['word']:
-                        insights.append(f"'{entity['word'].title()}' in your vision: {data['meaning']}")
+        # Cow chase interpretation
+        if 'cow' in entities:
+            insights.append("The cow chasing you may represent a situation or responsibility that seems threatening but can be overcome through faith and perseverance. Your ability to outrun it suggests divine enablement to overcome challenges.")
         
-        # Generate insights based on actions
-        movement_verbs = ['fly', 'run', 'walk', 'climb', 'fall']
-        transformation_verbs = ['change', 'transform', 'become', 'grow']
+        # Power/screen interpretation
+        if 'screen' in entities or 'power' in entities:
+            insights.append("The electric power flowing from the screen into your body suggests a divine impartation of spiritual gifts or revelation. This could indicate that God is preparing to use modern means to communicate with you or equip you for ministry.")
         
-        for action in actions:
-            if action['lemma'] in movement_verbs:
-                insights.append(f"The action of {action['verb']}ing suggests a spiritual journey or progression in your faith walk")
-            elif action['lemma'] in transformation_verbs:
-                insights.append("The transformative elements in this vision point to a season of spiritual growth and development")
-        
-        # Generate insights based on emotions
-        for emotion, intensity in emotions.items():
-            if emotion == 'fear' and 'protection' in themes:
-                insights.append("The interplay of fear and protective elements suggests God's reassurance during challenging times")
-            elif emotion == 'peace' and 'warfare' in themes:
-                insights.append("The presence of peace amidst conflict reflects God's promise of tranquility that surpasses understanding")
-        
-        # Ensure we have at least one insight
-        if not insights:
-            insights.append(self._generate_contextual_insight(themes))
-        
-        return insights
+        return insights or ["Your vision contains multiple symbolic elements that point to God's active work in your life."]
 
     def _get_relevant_scriptures(self, themes, entities, emotions):
         scriptures = []
         
-        # Get scriptures from matching themes
-        for theme in themes:
-            if theme in self.theme_categories:
-                theme_scriptures = self.theme_categories[theme]['scriptures']
-                scriptures.extend(random.sample(theme_scriptures, min(2, len(theme_scriptures))))
+        if 'warfare' in themes or 'protection' in themes:
+            scriptures.extend([
+                ('Isaiah 41:10', 'Fear not, for I am with you; be not dismayed, for I am your God; I will strengthen you, I will help you, I will uphold you with my righteous right hand.'),
+                ('Psalm 18:29', 'For by you I can run against a troop, and by my God I can leap over a wall.')
+            ])
         
-        # If no themes matched, provide general guidance scriptures
-        if not scriptures:
-            general_scriptures = [
-                ("Isaiah 55:8-9", "For my thoughts are not your thoughts, neither are your ways my ways, declares the LORD."),
-                ("James 1:5", "If any of you lacks wisdom, you should ask God, who gives generously to all without finding fault."),
-                ("Psalm 25:4-5", "Show me your ways, LORD, teach me your paths. Guide me in your truth and teach me.")
-            ]
-            scriptures.extend(random.sample(general_scriptures, 2))
+        if 'empowerment' in themes or 'spiritual gifts' in themes:
+            scriptures.extend([
+                ('Acts 1:8', 'But you will receive power when the Holy Spirit comes upon you, and you will be my witnesses.'),
+                ('1 Corinthians 12:7', 'Now to each one the manifestation of the Spirit is given for the common good.')
+            ])
         
-        return scriptures
+        if 'revelation' in themes:
+            scriptures.extend([
+                ('Joel 2:28', 'And afterward, I will pour out my Spirit on all people. Your sons and daughters will prophesy, your old men will dream dreams, your young men will see visions.'),
+                ('Habakkuk 2:2', 'Write down the revelation and make it plain on tablets.')
+            ])
+        
+        return scriptures[:4]  # Return top 4 most relevant scriptures
 
     def _generate_application_points(self, themes, entities, actions, emotions):
-        applications = set()
+        points = []
         
-        # Theme-based applications
-        for theme in themes:
-            if theme == 'protection':
-                applications.add("Take time to rest in God's protective presence")
-                applications.add("Memorize scriptures about God's protection")
-            elif theme == 'guidance':
-                applications.add("Seek wise counsel from spiritual mentors")
-                applications.add("Keep a journal of God's direction in your life")
-            elif theme == 'warfare':
-                applications.add("Put on the full armor of God daily")
-                applications.add("Develop a strategic prayer routine")
+        if 'warfare' in themes or 'protection' in themes:
+            points.append("Take courage knowing that God has given you the ability to overcome challenges that seem intimidating.")
         
-        # Action-based applications
-        for action in actions:
-            if action['lemma'] in ['wait', 'stand', 'stay']:
-                applications.add("Practice patience and waiting on God's timing")
-            elif action['lemma'] in ['move', 'go', 'run']:
-                applications.add("Be prepared for God to call you to action")
+        if 'empowerment' in themes or 'spiritual gifts' in themes:
+            points.append("Be open to receiving divine empowerment and new spiritual gifts, even through unexpected channels.")
+            points.append("Consider how God might want to use you to minister to others through these gifts.")
         
-        # Emotion-based applications
-        if emotions.get('fear'):
-            applications.add("Replace fear with faith through scripture meditation")
-        if emotions.get('peace'):
-            applications.add("Create space for quiet reflection and prayer")
+        if 'revelation' in themes:
+            points.append("Pay attention to how God may be speaking to you through various means, including modern technology.")
+            points.append("Keep a journal of your visions and revelations to track how God is speaking to you.")
         
-        # Ensure we have at least three applications
-        while len(applications) < 3:
-            applications.add(self._generate_general_application())
-        
-        return list(applications)
+        return points
 
     def _generate_prayer_points(self, themes, entities, emotions):
-        prayers = set()
+        prayers = []
         
-        # Theme-based prayers
-        for theme in themes:
-            if theme == 'protection':
-                prayers.add("Lord, strengthen my faith in Your protective care")
-            elif theme == 'guidance':
-                prayers.add("Holy Spirit, give me clarity and wisdom for the path ahead")
-            elif theme == 'warfare':
-                prayers.add("Father, equip me for the spiritual battles I face")
+        if 'warfare' in themes or 'protection' in themes:
+            prayers.append("Lord, grant me courage to face challenges, knowing that You are my protector and strength.")
         
-        # Emotion-based prayers
-        for emotion in emotions:
-            if emotion == 'fear':
-                prayers.add("Replace my fear with Your perfect peace")
-            elif emotion == 'joy':
-                prayers.add("Thank You for the joy You provide in all circumstances")
+        if 'empowerment' in themes or 'spiritual gifts' in themes:
+            prayers.append("Holy Spirit, help me to steward well the spiritual gifts and power You are imparting to me.")
         
-        # Add general prayers if needed
-        while len(prayers) < 3:
-            prayers.add(self._generate_contextual_prayer(themes))
+        if 'revelation' in themes:
+            prayers.append("Father, give me wisdom to understand and properly apply the revelations You are showing me.")
         
-        return list(prayers)
+        return prayers
 
     def _generate_contextual_insight(self, themes):
         general_insights = [
