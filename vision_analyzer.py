@@ -22,19 +22,26 @@ class VisionAnalyzer:
         
         # Download required NLTK data
         try:
-            nltk.data.find('tokenizers/punkt')
-            nltk.data.find('corpora/wordnet')
-        except LookupError:
-            nltk.download('punkt')
-            nltk.download('wordnet')
-            nltk.download('averaged_perceptron_tagger')
+            nltk.download('punkt', quiet=True)
+            nltk.download('wordnet', quiet=True)
+            nltk.download('averaged_perceptron_tagger', quiet=True)
+            logging.info("NLTK data downloaded successfully")
+        except Exception as e:
+            logging.error(f"Error downloading NLTK data: {str(e)}")
+            raise
         
         # Load spaCy model
         try:
             self.nlp = spacy.load('en_core_web_sm')
+            logging.info("spaCy model loaded successfully")
         except OSError:
-            spacy.cli.download('en_core_web_sm')
-            self.nlp = spacy.load('en_core_web_sm')
+            try:
+                spacy.cli.download('en_core_web_sm')
+                self.nlp = spacy.load('en_core_web_sm')
+                logging.info("spaCy model downloaded and loaded successfully")
+            except Exception as e:
+                logging.error(f"Error downloading spaCy model: {str(e)}")
+                raise
         
         # Theme categories with associated words and scriptures
         self.theme_categories = {

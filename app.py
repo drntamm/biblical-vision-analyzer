@@ -287,9 +287,30 @@ if __name__ == '__main__':
     with app.app_context():
         try:
             db.create_all()
-            init_db()
-            logger.info("Database initialized successfully")
+            logger.info("Database tables created successfully")
+            
+            # Initialize biblical symbols in the database
+            try:
+                populate_database(db)
+                logger.info("Biblical symbols populated successfully")
+            except Exception as e:
+                logger.error(f"Error populating biblical symbols: {str(e)}")
+            
+            # Test the vision analyzer
+            test_vision = "Test vision"
+            try:
+                result = vision_analyzer.analyze_vision(test_vision)
+                logger.info("Vision analyzer test successful")
+            except Exception as e:
+                logger.error(f"Vision analyzer test failed: {str(e)}")
+                
         except Exception as e:
-            logger.error(f"Error initializing database: {str(e)}")
+            logger.error(f"Error during initialization: {str(e)}")
             raise
-    app.run(debug=True, port=5001)
+    
+    # Run the app with debug mode for development
+    if os.environ.get('FLASK_ENV') == 'development':
+        app.run(debug=True)
+    else:
+        # Production settings
+        app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
